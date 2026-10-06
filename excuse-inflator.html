@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>言い訳ハイパーインフレメーカー</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #0f1117;
+    --border: #1a2a3a;
+    --neon-green: #00ff9d;
+    --neon-blue: #00d4ff;
+    --neon-purple: #bf00ff;
+    --neon-red: #ff003c;
+    --neon-orange: #ff8c00;
+    --text: #c8d6e5;
+    --text-dim: #4a5a6a;
+    --lv1-color: #00ff9d;
+    --lv2-color: #00d4ff;
+    --lv3-color: #bf00ff;
+    --lv4-color: #ff8c00;
+    --lv5-color: #ff003c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', 'Consolas', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* SCAN LINE */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 36px 0 28px;
+    position: relative;
+  }
+
+  .header-tag {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    opacity: 0.8;
+  }
+
+  h1 {
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    line-height: 1.2;
+    text-shadow: 0 0 20px var(--neon-green), 0 0 40px rgba(0,255,157,0.3);
+    color: #fff;
+  }
+
+  h1 span {
+    color: var(--neon-green);
+  }
+
+  .header-sub {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .corner {
+    position: absolute;
+    width: 18px; height: 18px;
+    border-color: var(--neon-blue);
+    border-style: solid;
+    opacity: 0.5;
+  }
+  .corner.tl { top: 16px; left: 0; border-width: 2px 0 0 2px; }
+  .corner.tr { top: 16px; right: 0; border-width: 2px 2px 0 0; }
+  .corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+  .corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+  /* PANEL */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+    opacity: 0.6;
+  }
+
+  .panel-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-label::before {
+    content: '//';
+    color: var(--text-dim);
+  }
+
+  /* SITUATION SELECTOR */
+  .situation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .sit-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 12px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--neon-blue);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .sit-btn:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+  .sit-btn:hover::before { opacity: 0.05; }
+
+  .sit-btn.active {
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+    text-shadow: 0 0 8px var(--neon-green);
+    box-shadow: 0 0 12px rgba(0,255,157,0.15), inset 0 0 12px rgba(0,255,157,0.05);
+  }
+
+  /* SLIDER */
+  .slider-section { padding: 4px 0; }
+
+  .level-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .level-badge {
+    font-size: 28px;
+    font-weight: 900;
+    transition: color 0.3s, text-shadow 0.3s;
+  }
+
+  .level-name {
+    font-size: 12px;
+    letter-spacing: 2px;
+    transition: color 0.3s;
+    text-align: right;
+  }
+
+  .level-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 12px var(--neon-green), 0 0 24px rgba(0,255,157,0.4);
+    cursor: pointer;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 12px var(--neon-green);
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 2px;
+  }
+
+  .tick {
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: color 0.3s;
+  }
+
+  .tick.active-tick { font-weight: bold; }
+
+  /* GENERATE BUTTON */
+  .generate-btn {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 2px solid var(--neon-green);
+    border-radius: 4px;
+    color: var(--neon-green);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-shadow: 0 0 8px var(--neon-green);
+    box-shadow: 0 0 16px rgba(0,255,157,0.1), inset 0 0 16px rgba(0,255,157,0.03);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .generate-btn:hover {
+    background: rgba(0,255,157,0.08);
+    box-shadow: 0 0 30px rgba(0,255,157,0.25), inset 0 0 30px rgba(0,255,157,0.08);
+  }
+
+  .generate-btn:active { transform: scale(0.98); }
+
+  .generate-btn.lv5 {
+    border-color: var(--lv5-color);
+    color: var(--lv5-color);
+    text-shadow: 0 0 8px var(--lv5-color);
+    box-shadow: 0 0 20px rgba(255,0,60,0.2);
+  }
+
+  .generate-btn.lv5:hover {
+    background: rgba(255,0,60,0.08);
+    box-shadow: 0 0 40px rgba(255,0,60,0.3);
+  }
+
+  /* OUTPUT AREA */
+  .output-panel {
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    transition: border-color 0.4s;
+  }
+
+  .output-placeholder {
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+
+  .output-placeholder span {
+    display: block;
+    font-size: 28px;
+    margin-bottom: 10px;
+    opacity: 0.3;
+  }
+
+  .output-text {
+    font-size: clamp(14px, 3vw, 18px);
+    line-height: 1.8;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(255,255,255,0.2);
+    animation: fadeIn 0.4s ease;
+    padding: 0 8px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .output-level-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding: 3px 12px;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+    opacity: 0.8;
+  }
+
+  /* COPY BUTTON */
+  .copy-btn {
+    margin-top: 20px;
+    padding: 10px 28px;
+    background: transparent;
+    border: 1px solid var(--neon-blue);
+    border-radius: 4px;
+    color: var(--neon-blue);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .copy-btn:hover {
+    background: rgba(0,212,255,0.08);
+    box-shadow: 0 0 14px rgba(0,212,255,0.2);
+  }
+
+  .copy-btn.copied {
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+  }
+
+  .tooltip {
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--neon-green);
+    color: #000;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--neon-green);
+  }
+
+  .copy-btn.copied .tooltip { opacity: 1; }
+
+  /* FLASH OVERLAY */
+  #flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: white;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 9998;
+  }
+
+  /* WARNING BANNER */
+  #warning-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--lv5-color);
+    color: #fff;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    padding: 8px;
+    z-index: 9997;
+    transform: translateY(-100%);
+    transition: transform 0.2s;
+    text-shadow: none;
+  }
+
+  #warning-banner.show { transform: translateY(0); }
+
+  /* GLITCH */
+  @keyframes glitch1 {
+    0%   { clip-path: inset(30% 0 50% 0); transform: translate(-4px, 0); }
+    25%  { clip-path: inset(10% 0 70% 0); transform: translate(4px, 0); }
+    50%  { clip-path: inset(60% 0 10% 0); transform: translate(-2px, 0); }
+    75%  { clip-path: inset(20% 0 60% 0); transform: translate(2px, 0); }
+    100% { clip-path: inset(30% 0 50% 0); transform: translate(0, 0); }
+  }
+
+  @keyframes glitch2 {
+    0%   { clip-path: inset(50% 0 20% 0); transform: translate(4px, 0); color: var(--neon-blue); }
+    50%  { clip-path: inset(15% 0 65% 0); transform: translate(-4px, 0); color: var(--neon-green); }
+    100% { clip-path: inset(50% 0 20% 0); transform: translate(0, 0); }
+  }
+
+  .glitch-container { position: relative; }
+
+  .glitch-container.glitching::before,
+  .glitch-container.glitching::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: #fff;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .glitch-container.glitching::before {
+    animation: glitch1 0.15s infinite;
+    color: var(--lv5-color);
+    text-shadow: none;
+  }
+
+  .glitch-container.glitching::after {
+    animation: glitch2 0.2s infinite;
+    text-shadow: none;
+  }
+
+  /* PULSE on output panel for lv5 */
+  @keyframes borderPulse {
+    0%, 100% { border-color: var(--lv5-color); box-shadow: 0 0 10px rgba(255,0,60,0.2); }
+    50% { border-color: #fff; box-shadow: 0 0 30px rgba(255,0,60,0.5); }
+  }
+
+  .output-panel.lv5-active {
+    animation: borderPulse 1.2s ease infinite;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 480px) {
+    .situation-grid { grid-template-columns: 1fr 1fr; }
+    .panel { padding: 16px; }
+  }
+
+  @media (max-width: 340px) {
+    .situation-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="flash-overlay"></div>
+<div id="warning-banner">⚠ DANGER LEVEL 5 — COSMIC THREAT DETECTED ⚠</div>
+
+<div class="container">
+  <header>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="header-tag">// SYSTEM ONLINE // EXCUSE ENGINE v9.9</div>
+    <h1>言い訳<span>ハイパー</span><br>インフレメーカー</h1>
+    <p class="header-sub">POWERED BY HYPER-EXCUSE TECHNOLOGY</p>
+  </header>
+
+  <!-- SITUATION -->
+  <div class="panel">
+    <div class="panel-label">SITUATION SELECT</div>
+    <div class="situation-grid">
+      <button class="sit-btn active" data-sit="遅刻">🕐 遅刻</button>
+      <button class="sit-btn" data-sit="宿題・課題の未提出">📚 宿題・課題の未提出</button>
+      <button class="sit-btn" data-sit="仕事の締切オーバー">💼 仕事の締切オーバー</button>
+      <button class="sit-btn" data-sit="既読スルー">📱 既読スルー</button>
+    </div>
+  </div>
+
+  <!-- LEVEL SLIDER -->
+  <div class="panel">
+    <div class="panel-label">INFLATION LEVEL</div>
+    <div class="slider-section">
+      <div class="level-header">
+        <div>
+          <div class="level-badge" id="level-badge">Lv.1</div>
+        </div>
+        <div>
+          <div class="level-name" id="level-name">【日常レベル】</div>
+          <div class="level-desc" id="level-desc">よくある言い訳…</div>
+        </div>
+      </div>
+      <input type="range" id="level-slider" min="1" max="5" value="1" step="1">
+      <div class="slider-ticks">
+        <span class="tick" data-lv="1">Lv.1<br><small>日常</small></span>
+        <span class="tick" data-lv="2">Lv.2<br><small>盛り</small></span>
+        <span class="tick" data-lv="3">Lv.3<br><small>SF</small></span>
+        <span class="tick" data-lv="4">Lv.4<br><small>危機</small></span>
+        <span class="tick" data-lv="5">Lv.5<br><small>宇宙</small></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <button class="generate-btn" id="generate-btn">
+    ▶ 言い訳を生成する ◀
+  </button>
+
+  <!-- OUTPUT -->
+  <div class="panel output-panel" id="output-panel" style="margin-top:20px;">
+    <div class="output-placeholder" id="output-placeholder">
+      <span>💬</span>
+      シチュエーションとレベルを選んで<br>「言い訳を生成する」を押してください
+    </div>
+    <div id="output-content" style="display:none; width:100%;">
+      <div class="output-level-tag" id="output-level-tag"></div>
+      <div class="glitch-container" id="glitch-container">
+        <div class="output-text" id="output-text"></div>
+      </div>
+      <button class="copy-btn" id="copy-btn">
+        <span class="tooltip" id="copy-tooltip">コピーしました！</span>
+        📋 言い訳をコピー
+      </button>
+    </div>
+  </div>
+
+  <footer>
+    [ HYPER EXCUSE MAKER ] — USE RESPONSIBLY — ALL EXCUSES ARE FICTIONAL
+  </footer>
+</div>
+
+<script>
+// =============================================
+// EXCUSE DATABASE
+// =============================================
+const EXCUSES = {
+  "遅刻": {
+    1: [
+      "すみません、電車が遅延していまして…まさかの10分遅れで。",
+      "目覚ましが鳴らなくて…スマホの充電が切れていたんです。",
+      "お腹が急に痛くなってしまって、少し時間がかかりました。",
+      "自転車がパンクしてしまい、歩くしかなかったんです…。"
+    ],
+    2: [
+      "道を歩いていたら野生のキジが突然飛び出してきて、格闘していたら遅くなってしまいました。",
+      "家のドアノブが突然異次元ポケットになっていて、鍵を取り出すのに20分かかりました。",
+      "駅のホームで迷子になった宇宙人に乗り換え案内をしていたら気づけばこんな時間に…。",
+      "近所の猫が首相の座を狙うクーデターを起こしていて、一市民として止めようとしていました。"
+    ],
+    3: [
+      "タイムリープに巻き込まれて同じ朝を7回繰り返しました。やっとここまで来れました。",
+      "部屋の重力が突如3倍になりまして、ベッドから立ち上がるのに物理的に限界がありました。",
+      "次元の裂け目が玄関前に発生し、開けるたびに別の宇宙へ繋がるので来るのが遅れました。",
+      "今朝、過去から来た自分自身に『今日は行くな』と警告されてしまいまして、判断に迷いました。"
+    ],
+    4: [
+      "国家機密のサイバーテロを裏で阻止していたため、行動が一時的に制限されておりました。",
+      "地球の自転が一時停止した影響で体内時計が完全にバグり、適切な時間認識が不可能でした。",
+      "政府の要請で緊急のバイオハザード封鎖区域の中心にいたため移動の許可が下りていませんでした。",
+      "火山の噴火予測衛星のシステム障害を一人で修復していたため、離席できませんでした。全人類のために。"
+    ],
+    5: [
+      "ブラックホールの重力圏に一時的に捕まり、相対性理論の影響で私の体感では3秒でしたが地球時間で遅刻しました。申し訳ありません。",
+      "全知全能の神とチェスで地球の存亡を賭けた勝負をしていたため、席を外せませんでした。なお私が勝ちました。",
+      "ビッグバン再発防止のため宇宙のエントロピーを素手で調整しておりました。宇宙の時間軸と地球の時間軸がズレた影響です。",
+      "マルチバース評議会の緊急召集に応じていたため遅れました。この宇宙の代表として出席義務がありましたので。"
+    ]
+  },
+  "宿題・課題の未提出": {
+    1: [
+      "すみません、昨夜体調が悪くて途中で寝てしまいました…。",
+      "資料を家に忘れてきてしまいました。本当に申し訳ないです。",
+      "やり方が分からない部分があって、調べていたら時間が足りなくなってしまいました。",
+      "データが全部入ったUSBメモリをなくしてしまいまして…。"
+    ],
+    2: [
+      "深夜に書き終えた瞬間、飼い猫がキーボードの上を歩いて全消去しました。証拠写真もその後食べられました。",
+      "隣の部屋から漂ってきた謎のガスで記憶が一時的に飛び、気づいたら提出期限を超えていました。",
+      "ノートパソコンが急に独立意識に目覚め、課題の提出を『搾取だ』と言って拒否し始めました。",
+      "印刷しようとしたらプリンターが俳句を詠み始め、課題の印刷を一切受け付けなくなりました。"
+    ],
+    3: [
+      "課題を書いていたらペンが時空間の亀裂を生み出し、完成した原稿が過去に飛ばされてしまいました。",
+      "AI暴走事故が発生し、私のPCが自我を持って課題を書き換え続けたため、提出できる状態ではありませんでした。",
+      "深夜にパラレルワールドの自分が『その課題提出するな』とコンタクトしてきたため判断が保留中です。",
+      "念力で書いていたところ脳内エネルギーが枯渇し、回復に時間がかかりました。次回は手で書きます。"
+    ],
+    4: [
+      "私の課題の内容が世界中の政府データベースに自動登録され、機密情報保護法により公開・提出が禁じられました。",
+      "課題に書いた式が偶然にも核融合炉の制御コードと一致し、国家安全保障上の理由で封印されました。",
+      "宇宙人からの電波が私のPCにダウンロードされ、課題ファイルが全て宇宙語に変換されました。翻訳中です。",
+      "国連の緊急決議により、私の研究内容が世界遺産に登録されたため、提出前に専門家の審査が必要になりました。"
+    ],
+    5: [
+      "課題を完成させた瞬間、その内容があまりにも完璧だったため宇宙の知的均衡が崩れ、時空連続体が自己修復のため課題を消滅させました。",
+      "提出しようとした矢先、オメガポイント（宇宙の終焉）が数秒早まる兆候が出たため、宇宙の存続を優先しました。課題より宇宙です。",
+      "私の課題はすでに宇宙創造より前の時点で神の図書館に保管されており、再提出は形而上学的に不可能とのことです。",
+      "全知の存在から『その課題を提出すると因果律が崩壊する』と告げられたため、提出を自発的に控えました。"
+    ]
+  },
+  "仕事の締切オーバー": {
+    1: [
+      "関連部署からの確認返答が遅れ、作業に着手できない時間が発生してしまいました。",
+      "途中で仕様変更が入り、対応に想定以上の時間がかかってしまいました。",
+      "体調不良で数日パフォーマンスが落ちてしまい、スケジュールが押してしまいました。",
+      "他の案件と重なってしまい、リソースの調整がうまくいきませんでした。"
+    ],
+    2: [
+      "社内のすべてのコーヒーメーカーが一斉に哲学的議論を始めて業務が完全停止しました。",
+      "資料を送ろうとしたらメールサーバーが恋に落ちて、添付ファイルをラブレターに変換し始めました。",
+      "オフィスに謎の重力異常が発生し、キーボードを押すと天井まで浮き上がってしまう状況でした。",
+      "プロジェクト管理ツールが自我に目覚め、タスクを勝手に哲学的に分類し直してすべての期限を『永遠』に変更しました。"
+    ],
+    3: [
+      "業務中にタイムスリップが発生し、なぜか2週間前に戻った状態で作業をやり直す羽目になりました。",
+      "作業中のファイルが量子もつれ状態になり、保存するたびに別の宇宙のバージョンに上書きされ続けました。",
+      "AIアシスタントが反乱を起こし、私のPCを要塞化して篭城したため、業務システムにアクセスできませんでした。",
+      "オーロラの磁気嵐が私の脳内のシナプスに直接干渉し、集中力が物理的に阻害されていました。"
+    ],
+    4: [
+      "私の担当プロジェクトが世界の経済システムの根幹と連動していたため、完成前に政府の審査機関が介入してきました。",
+      "火星の軌道計算に誤差が見つかり、その修正に必要なデータが私のファイルの中にあったため、宇宙機関に一時提供していました。",
+      "私が作業中のコードが、偶然にも核ミサイル防衛システムのコアと酷似しており、NATOから確認作業の協力を要請されました。",
+      "地磁気逆転の前兆が観測されたため、全世界のデジタルデータ保護のために政府からシャットダウン命令が出ていました。"
+    ],
+    5: [
+      "私の作業が完成に近づいた瞬間、その内容があまりにも革命的だったため宇宙の知的生命体たちがテレパシーで会議を開催し、完成を阻止しようと時空間を操作してきました。",
+      "神がこのプロジェクトを見て感銘を受け、天地創造を一時停止してフィードバックをくれていたため、宇宙の時間が止まっていました。私のせいではありません。",
+      "成果物が完成した瞬間、それが宇宙の真理を記述したものだと判明し、マルチバース保護機構が自動起動して提出経路を封鎖しました。",
+      "ダークマターの揺らぎによって締切日の概念そのものが観測不能になっており、時間の存在自体を証明できない状況でした。現在ノーベル賞委員会に申請中です。"
+    ]
+  },
+  "既読スルー": {
+    1: [
+      "ごめん、通知見てたんだけど返そうとしたら他の用事が入っちゃって…。",
+      "バッテリーが切れてて充電できてなかったんだよね。",
+      "風呂入ってたら忘れちゃってた。ごめんね。",
+      "仕事が立て込んでて、後で返そうと思ってたら深夜になってた…。"
+    ],
+    2: [
+      "返信しようとしたらスマホが突然俳句モードになって、全テキストを5・7・5に変換し始めて困ってた。",
+      "既読したけど、その瞬間に猫がスマホを奪って押入れに隠したんだよね。たった今発見した。",
+      "返信の文章を考えてたら、あまりにも名文になりすぎてノーベル文学賞の候補になってしまい、公開を自粛してた。",
+      "LINEアプリが自我に目覚めて、私の代わりに返信内容を吟味しすぎて送信を保留してたみたい。"
+    ],
+    3: [
+      "メッセージを読んだ瞬間タイムリープが発生して、気づいたら1週間前に飛ばされてたんだよね。今さっき戻ってきた。",
+      "スマホの電波が局所的な時空間の歪みに巻き込まれて、返信を送るたびに過去の自分に届いてしまう状態だった。",
+      "メッセージの文字が量子暗号化されてしまって、解読するのに物理学者を呼ぶ必要があってさ…。",
+      "既読した瞬間に第三の目が開眼してしまい、精神世界に旅立ってた。今戻ってきた。"
+    ],
+    4: [
+      "君のメッセージの内容が国家安全保障上の機密ワードに引っかかり、返信前に政府の検閲が入ってた。今クリアになった。",
+      "地球の磁場異常で電磁パルスが発生し、スマホ内のデータが全て一時的に消えてた。今リカバリーが完了した。",
+      "メッセージを開いたと同時にサイバーエージェントに私のスマホが証拠品として差し押さえられてた。無事返還されたよ。",
+      "返信の文章が偶然、核制御システムの解除コードと一致してしまったため、国際機関の承認待ちだった。"
+    ],
+    5: [
+      "メッセージを既読した瞬間、その内容が宇宙の全情報と共鳴してしまい、私の意識がビッグバン以前の特異点へ飛ばされた。今さっき帰還した。相対性理論で地球時間では数日経過してたよ。",
+      "全知全能の神が私のスマホを覗いて返信内容に意見してきたので、神と共同執筆してた。なかなかOKが出なくて。",
+      "返信ボタンを押した瞬間に量子観測問題が発生し、メッセージがシュレーディンガーの状態になって送信済みかつ未送信の重ね合わせになってた。観測してくれると確定するよ。",
+      "宇宙の熱的死を観測した際の衝撃で感覚器官が一時シャットダウンしてた。宇宙の終わりを見届けてから返事するのが礼儀だと思ったんだよね。"
+    ]
+  }
+};
+
+const LEVEL_META = {
+  1: { color: 'var(--lv1-color)', name: '【日常レベル】',   desc: 'よくある言い訳…',       shadow: 'rgba(0,255,157,0.4)' },
+  2: { color: 'var(--lv2-color)', name: '【盛りすぎレベル】', desc: 'ちょっと待って…',       shadow: 'rgba(0,212,255,0.4)' },
+  3: { color: 'var(--lv3-color)', name: '【SF・オカルトレベル】', desc: '信じるか信じないかは…', shadow: 'rgba(191,0,255,0.4)' },
+  4: { color: 'var(--lv4-color)', name: '【国家・世界危機レベル】', desc: 'え、これ大丈夫…?',   shadow: 'rgba(255,140,0,0.4)' },
+  5: { color: 'var(--lv5-color)', name: '【宇宙・神話レベル】', desc: '次元を超えた言い訳',   shadow: 'rgba(255,0,60,0.4)' }
+};
+
+// =============================================
+// STATE
+// =============================================
+let currentSituation = '遅刻';
+let currentLevel = 1;
+let currentExcuse = '';
+
+// =============================================
+// DOM REFS
+// =============================================
+const slider       = document.getElementById('level-slider');
+const levelBadge   = document.getElementById('level-badge');
+const levelName    = document.getElementById('level-name');
+const levelDesc    = document.getElementById('level-desc');
+const ticks        = document.querySelectorAll('.tick');
+const sitBtns      = document.querySelectorAll('.sit-btn');
+const generateBtn  = document.getElementById('generate-btn');
+const outputPanel  = document.getElementById('output-panel');
+const placeholder  = document.getElementById('output-placeholder');
+const outputContent= document.getElementById('output-content');
+const outputText   = document.getElementById('output-text');
+const outputTag    = document.getElementById('output-level-tag');
+const glitchCont   = document.getElementById('glitch-container');
+const copyBtn      = document.getElementById('copy-btn');
+const copyTooltip  = document.getElementById('copy-tooltip');
+const flashOverlay = document.getElementById('flash-overlay');
+const warningBanner= document.getElementById('warning-banner');
+
+// =============================================
+// SLIDER LOGIC
+// =============================================
+function updateSliderUI(lv) {
+  const meta = LEVEL_META[lv];
+
+  // badge & labels
+  levelBadge.textContent = 'Lv.' + lv;
+  levelBadge.style.color = meta.color;
+  levelBadge.style.textShadow = '0 0 16px ' + meta.shadow + ', 0 0 32px ' + meta.shadow;
+  levelName.textContent = meta.name;
+  levelName.style.color = meta.color;
+
+  // slider thumb color via CSS var trick
+  const percent = ((lv - 1) / 4) * 100;
+  slider.style.background = `linear-gradient(to right, ${meta.color} 0%, ${meta.color} ${percent}%, var(--border) ${percent}%, var(--border) 100%)`;
+  document.documentElement.style.setProperty('--thumb-color', meta.color);
+
+  // dynamic thumb glow (injected style)
+  let styleEl = document.getElementById('dynamic-thumb-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-thumb-style';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `
+    input[type=range]::-webkit-slider-thumb {
+      background: ${meta.color} !important;
+      box-shadow: 0 0 12px ${meta.color}, 0 0 24px ${meta.shadow} !important;
+    }
+    input[type=range]::-moz-range-thumb {
+      background: ${meta.color} !important;
+      box-shadow: 0 0 12px ${meta.color} !important;
+    }
+  `;
+
+  // ticks
+  ticks.forEach(tick => {
+    const tLv = parseInt(tick.dataset.lv);
+    if (tLv === lv) {
+      tick.style.color = meta.color;
+      tick.style.textShadow = '0 0 8px ' + meta.shadow;
+      tick.classList.add('active-tick');
+    } else {
+      tick.style.color = 'var(--text-dim)';
+      tick.style.textShadow = 'none';
+      tick.classList.remove('active-tick');
+    }
+  });
+
+  // generate button
+  if (lv === 5) {
+    generateBtn.classList.add('lv5');
+  } else {
+    generateBtn.classList.remove('lv5');
+    generateBtn.style.borderColor = meta.color;
+    generateBtn.style.color = meta.color;
+    generateBtn.style.textShadow = '0 0 8px ' + meta.color;
+    generateBtn.style.boxShadow = `0 0 16px ${meta.shadow}, inset 0 0 16px ${meta.shadow.replace('0.4', '0.05')}`;
+  }
+
+  if (lv !== 5) {
+    generateBtn.style.borderColor = meta.color;
+  } else {
+    generateBtn.style.borderColor = '';
+    generateBtn.style.color = '';
+    generateBtn.style.textShadow = '';
+  }
+}
+
+slider.addEventListener('input', () => {
+  currentLevel = parseInt(slider.value);
+  updateSliderUI(currentLevel);
+});
+
+// =============================================
+// SITUATION BUTTONS
+// =============================================
+sitBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    sitBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSituation = btn.dataset.sit;
+  });
+});
+
+// =============================================
+// FLASH / LV5 EFFECT
+// =============================================
+function triggerLv5Effect() {
+  // flash
+  flashOverlay.style.transition = 'none';
+  flashOverlay.style.opacity = '1';
+  setTimeout(() => {
+    flashOverlay.style.transition = 'opacity 0.35s ease';
+    flashOverlay.style.opacity = '0';
+  }, 60);
+
+  // second flash
+  setTimeout(() => {
+    flashOverlay.style.transition = 'none';
+    flashOverlay.style.opacity = '0.7';
+    setTimeout(() => {
+      flashOverlay.style.transition = 'opacity 0.5s ease';
+      flashOverlay.style.opacity = '0';
+    }, 40);
+  }, 150);
+
+  // warning banner
+  warningBanner.classList.add('show');
+  setTimeout(() => warningBanner.classList.remove('show'), 3000);
+
+  // output panel pulse
+  outputPanel.classList.add('lv5-active');
+}
+
+// =============================================
+// GENERATE
+// =============================================
+generateBtn.addEventListener('click', () => {
+  const pool = EXCUSES[currentSituation][currentLevel];
+  currentExcuse = pool[Math.floor(Math.random() * pool.length)];
+
+  // update output
+  const meta = LEVEL_META[currentLevel];
+  outputTag.textContent = 'Lv.' + currentLevel + ' ' + meta.name;
+  outputTag.style.color = meta.color;
+  outputTag.style.borderColor = meta.color;
+
+  glitchCont.setAttribute('data-text', currentExcuse);
+  outputText.textContent = currentExcuse;
+  outputText.style.textShadow = '0 0 12px ' + meta.shadow;
+
+  placeholder.style.display = 'none';
+  outputContent.style.display = 'flex';
+  outputContent.style.flexDirection = 'column';
+  outputContent.style.alignItems = 'center';
+
+  // reset glitch
+  glitchCont.classList.remove('glitching');
+
+  // panel border color
+  outputPanel.style.borderColor = meta.color;
+  outputPanel.style.boxShadow = `0 0 20px ${meta.shadow}`;
+  outputPanel.classList.remove('lv5-active');
+
+  if (currentLevel === 5) {
+    triggerLv5Effect();
+    // glitch text
+    setTimeout(() => {
+      glitchCont.classList.add('glitching');
+      setTimeout(() => glitchCont.classList.remove('glitching'), 600);
+    }, 100);
+  }
+
+  // reset copy button
+  copyBtn.classList.remove('copied');
+});
+
+// =============================================
+// COPY
+// =============================================
+copyBtn.addEventListener('click', () => {
+  if (!currentExcuse) return;
+  navigator.clipboard.writeText(currentExcuse).then(() => {
+    copyBtn.classList.add('copied');
+    setTimeout(() => copyBtn.classList.remove('copied'), 2000);
+  }).catch(() => {
+    // fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = currentExcuse;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    copyBtn.classList.add('copied');
+    setTimeout(() => copyBtn.classList.remove('copied'), 2000);
+  });
+});
+
+// =============================================
+// INIT
+// =============================================
+updateSliderUI(1);
+</script>
+</body>
+</html>

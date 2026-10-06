@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers 設定ファイル
+  "name": "hiperinflation",
+  "compatibility_date": "2025-01-01",
+
+  // 静的アセット配信の設定
+  "assets": {
+    "directory": "./public"
+  }
+}
